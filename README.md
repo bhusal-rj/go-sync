@@ -7,52 +7,46 @@ Go Sync is designed to efficiently synchronize files and directories between loc
 
 ## Milestones
 
-- **Milestone 1:** Core local file sync functionality
-  - [ ] Design file comparison logic
-  - [ ] Implement file copy/move operations
+- **M1:** Basic file/directory sync (no delta)
+  - [ ] Design file/directory traversal
+  - [ ] Implement file copy/move logic
   - [ ] Handle directory recursion
-  - [ ] Error handling and logging
+  - [ ] Basic error handling
 
-- **Milestone 2:** User-friendly CLI and configuration options
-  - [ ] Design CLI interface
-  - [ ] Implement config file support
-  - [ ] Add help and usage documentation
-  - [ ] Validate user input
+- **M2:** Preserve metadata (timestamps, permissions)
+  - [ ] Research metadata handling in Go
+  - [ ] Implement timestamp preservation
+  - [ ] Implement permission preservation
+  - [ ] Test metadata sync on all platforms
 
-- **Milestone 3:** Cross-platform support (Windows, Linux, macOS)
-  - [ ] Test on Windows
-  - [ ] Test on Linux
-  - [ ] Test on macOS
-  - [ ] Fix platform-specific issues
+- **M3:** Checksum-based delta sync
+  - [ ] Select checksum algorithm
+  - [ ] Implement checksum calculation
+  - [ ] Integrate delta sync logic
+  - [ ] Test delta sync performance
 
-- **Milestone 4:** Automated tests and CI integration
-  - [ ] Write unit tests
-  - [ ] Write integration tests
-  - [ ] Set up CI pipeline
-  - [ ] Monitor test coverage
+- **M4:** Compression (optional gzip/zstd)
+  - [ ] Research compression libraries
+  - [ ] Implement gzip compression
+  - [ ] Implement zstd compression
+  - [ ] Add CLI/config option for compression
 
-- **Milestone 5:** Delta update algorithm implementation
-  - [ ] Research delta algorithms
-  - [ ] Implement delta calculation
-  - [ ] Integrate delta transfer into sync
-  - [ ] Benchmark performance
-
-- **Milestone 6:** Remote sync support (SSH/SFTP)
-  - [ ] Integrate SSH/SFTP libraries
+- **M5:** Remote sync over SSH or TCP
+  - [ ] Integrate SSH/TCP libraries
   - [ ] Implement remote authentication
-  - [ ] Sync files over network
+  - [ ] Implement remote file transfer
   - [ ] Test remote sync reliability
 
-- **Milestone 7:** Conflict detection and resolution
-  - [ ] Detect file conflicts
-  - [ ] Design conflict resolution strategies
-  - [ ] Implement user prompts for conflicts
-  - [ ] Automated conflict resolution option
+- **M6:** Progress bar, verbose logs
+  - [ ] Design progress bar UI
+  - [ ] Implement progress tracking
+  - [ ] Add verbose logging option
+  - [ ] Test logging and progress bar
 
-- **Milestone 8:** Documentation and usage examples
-  - [ ] Write installation guide
-  - [ ] Provide usage examples
-  - [ ] Document API
-  - [ ] Maintain changelog
+- **M7:** Concurrent file transfers
+  - [ ] Design concurrency model
+  - [ ] Implement concurrent transfers
+  - [ ] Handle concurrency errors
+  - [ ] Benchmark concurrency performance
 
 ---
