@@ -35,12 +35,21 @@ var syncCmd = &cobra.Command{
 	Run:   runSync,
 }
 
+var infoCmd = &cobra.Command{
+	Use:   "info",
+	Short: "Display information about the tool",
+	Long: `Display detailed information about the go-sync tool, including its features,
+	usage instructions, and configuration options.`,
+	Run: runInfo,
+}
+
 func init() {
 	// Go automatically calls the init function before the main function
 	addFlags(rootCmd)
 	addFlags(syncCmd)
 
 	rootCmd.AddCommand(syncCmd)
+	rootCmd.AddCommand(infoCmd)
 }
 
 func runSync(cmd *cobra.Command, args []string) {
@@ -59,6 +68,10 @@ func runSync(cmd *cobra.Command, args []string) {
 
 	// TODO:- Call the actual sync function from the sync package
 
+}
+
+func runInfo(cmd *cobra.Command, args []string) {
+	fmt.Println(("Go Sync is the tool for synchronizing files and directories."))
 }
 
 func addFlags(cmd *cobra.Command) {
