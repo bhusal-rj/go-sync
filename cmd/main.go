@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bhusal-rj/go-sync/internal/sync"
 	"github.com/spf13/cobra"
 )
 
@@ -53,6 +54,8 @@ func init() {
 }
 
 func runSync(cmd *cobra.Command, args []string) {
+	sync.TraverseDirectory("../")
+	return
 	if _, err := os.Stat(source); os.IsNotExist(err) {
 		println("Source path does not exist:", source)
 		return
@@ -80,8 +83,8 @@ func addFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Recursively sync directories")
 	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
 
-	cmd.MarkFlagRequired("source")
-	cmd.MarkFlagRequired("destination")
+	// cmd.MarkFlagRequired("source")
+	// cmd.MarkFlagRequired("destination")
 }
 
 func main() {
