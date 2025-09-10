@@ -13,6 +13,7 @@ var (
 	destination string
 	recursive   bool
 	verbose     bool
+	hidden      bool
 )
 
 // Th go-sync is the main entry point of the application
@@ -46,7 +47,7 @@ var infoCmd = &cobra.Command{
 
 func init() {
 	// Go automatically calls the init function before the main function
-	addFlags(rootCmd)
+	// addFlags(rootCmd)
 	addFlags(syncCmd)
 
 	rootCmd.AddCommand(syncCmd)
@@ -54,23 +55,32 @@ func init() {
 }
 
 func runSync(cmd *cobra.Command, args []string) {
-	sync.TraverseDirectory("../")
-	return
 	if _, err := os.Stat(source); os.IsNotExist(err) {
-		println("Source path does not exist:", source)
-		return
+		fmt.Printf("Source path does not exist: %s\n", source)
+		os.Exit(1)
 	}
+
 	if verbose {
-		fmt.Printf("Starting synchronization from %s to %s", source, destination)
-		fmt.Printf("Recursive: %v", recursive)
-		fmt.Printf("Verbose: %v", verbose)
-		fmt.Printf("Starting sync...")
-	} else {
-		fmt.Printf("Syncing '%s' to '%s'", source, destination)
+		fmt.Printf("Starting sync from %s to %s\n", source, destination)
+		fmt.Printf("Recursive: %v\n", recursive)
+		fmt.Printf("Verbose: %v\n", verbose)
+		fmt.Printf("Hidden: %v\n", hidden)
 	}
 
-	// TODO:- Call the actual sync function from the sync package
+	opts := sync.SyncOptions{
+		Source:      source,
+		Destination: destination,
+		Recursive:   recursive,
+		Verbose:     verbose,
+		Hidden:      hidden,
+	}
 
+	if err := sync.BasicSync(opts); err != nil {
+		fmt.Printf("Sync failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Sync completed successfully!")
 }
 
 func runInfo(cmd *cobra.Command, args []string) {
@@ -82,6 +92,11 @@ func addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&destination, "destination", "d", "", "Destination path (local or remote)")
 	cmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Recursively sync directories")
 	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
+
+	if cmd == syncCmd {
+
+		cmd.Flags().BoolVarP(&hidden, "hidden", "H", false, "Include the hidden directories")
+	}
 
 	// cmd.MarkFlagRequired("source")
 	// cmd.MarkFlagRequired("destination")
