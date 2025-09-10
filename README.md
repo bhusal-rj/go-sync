@@ -8,10 +8,10 @@ Go Sync is designed to efficiently synchronize files and directories between loc
 ## Milestones
 
 - **M1:** Basic file/directory sync (no delta)
-  - [ ] Design file/directory traversal
-  - [ ] Implement file copy/move logic
-  - [ ] Handle directory recursion
-  - [ ] Basic error handling
+  - [x] Design file/directory traversal
+  - [x] Implement file copy/move logic
+  - [x] Handle directory recursion
+  - [x] Basic error handling
 
 - **M2:** Preserve metadata (timestamps, permissions)
   - [ ] Research metadata handling in Go
