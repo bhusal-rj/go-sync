@@ -3,6 +3,7 @@ package sync
 import (
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"syscall"
 	"time"
@@ -57,8 +58,10 @@ func CopyFile(source string, destination string) error {
 	}
 	defer sourceFile.Close()
 
+	destinationPath := path.Join(destination, source)
+
 	//Create the destination file from the disk
-	destFile, err := os.Create(destination)
+	destFile, err := os.Create(destinationPath)
 
 	if err != nil {
 		return err
@@ -73,7 +76,7 @@ func CopyFile(source string, destination string) error {
 
 	//Ensure that all the data is written to the file
 
-	return PreserveFileMetadata(source, destination)
+	return PreserveFileMetadata(source, destinationPath)
 }
 func TraverseDirectory(rooPath string, hidden bool) ([]FileInfo, error) {
 
@@ -114,6 +117,7 @@ func TraverseDirectory(rooPath string, hidden bool) ([]FileInfo, error) {
 
 // PreserveFileMetadata and permissions of the copied file
 func PreserveFileMetadata(source, destination string) error {
+
 	sourceInfo, err := os.Stat(source)
 	if err != nil {
 		return err

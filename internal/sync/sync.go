@@ -17,6 +17,7 @@ type SyncOptions struct {
 // BasicSync performs basic file/directory sync
 func BasicSync(opts SyncOptions) error {
 	sourceInfo, err := GetFileInfo(opts.Source)
+
 	if err != nil {
 		return fmt.Errorf("source path error: %w", err)
 	}

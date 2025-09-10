@@ -14,9 +14,9 @@ Go Sync is designed to efficiently synchronize files and directories between loc
   - [x] Basic error handling
 
 - **M2:** Preserve metadata (timestamps, permissions)
-  - [ ] Research metadata handling in Go
-  - [ ] Implement timestamp preservation
-  - [ ] Implement permission preservation
+  - [x] Research metadata handling in Go
+  - [x] Implement timestamp preservation
+  - [x] Implement permission preservation
   - [ ] Test metadata sync on all platforms
 
 - **M3:** Checksum-based delta sync
