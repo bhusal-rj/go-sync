@@ -61,6 +61,13 @@ func syncDirectory(source, destination string, opts SyncOptions) error {
 		}
 	}
 
+	// Preserve directory metadata
+	if err := PreserveDirectoryMetadata(source, destination); err != nil {
+		if opts.Verbose {
+			fmt.Printf("Warning: Could not preserve directory metadata: %v\n", err)
+		}
+	}
+
 	return nil
 }
 

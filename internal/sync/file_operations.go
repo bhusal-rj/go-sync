@@ -4,14 +4,18 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"syscall"
+	"time"
 )
 
 type FileInfo struct {
 	Path    string
 	Size    int64
 	IsDir   bool
-	ModTime int64
+	ModTime time.Time
 	Mode    os.FileMode
+	Uid     int
+	Gid     int
 }
 
 func GetFileInfo(path string) (*FileInfo, error) {
@@ -31,7 +35,7 @@ func GetFileInfo(path string) (*FileInfo, error) {
 		Path:    file_path,
 		Size:    fileInfo.Size(),
 		IsDir:   fileInfo.IsDir(),
-		ModTime: fileInfo.ModTime().Unix(),
+		ModTime: fileInfo.ModTime(),
 		Mode:    fileInfo.Mode(),
 	}, nil
 
@@ -68,7 +72,8 @@ func CopyFile(source string, destination string) error {
 	}
 
 	//Ensure that all the data is written to the file
-	return destFile.Sync()
+
+	return PreserveFileMetadata(source, destination)
 }
 func TraverseDirectory(rooPath string, hidden bool) ([]FileInfo, error) {
 
@@ -88,7 +93,7 @@ func TraverseDirectory(rooPath string, hidden bool) ([]FileInfo, error) {
 			Path:    filepath.Join(rooPath, entry.Name()),
 			Size:    fileInfo.Size(),
 			IsDir:   fileInfo.IsDir(),
-			ModTime: fileInfo.ModTime().Unix(),
+			ModTime: fileInfo.ModTime(),
 			Mode:    fileInfo.Mode(),
 		})
 		if entry.IsDir() {
@@ -105,4 +110,42 @@ func TraverseDirectory(rooPath string, hidden bool) ([]FileInfo, error) {
 	}
 
 	return files, nil
+}
+
+// PreserveFileMetadata and permissions of the copied file
+func PreserveFileMetadata(source, destination string) error {
+	sourceInfo, err := os.Stat(source)
+	if err != nil {
+		return err
+	}
+
+	// Preserve modification time
+	if err := os.Chtimes(destination, time.Now(), sourceInfo.ModTime()); err != nil {
+		return nil
+	}
+
+	// Preserve the ownership of the file
+	if stat, ok := sourceInfo.Sys().(*syscall.Stat_t); ok {
+		if err := os.Chown(destination, int(stat.Uid), int(stat.Gid)); err != nil {
+			return nil
+		}
+	}
+	return nil
+
+}
+
+func PreserveDirectoryMetadata(source, destination string) error {
+	sourceInfo, err := os.Stat(source)
+	if err != nil {
+		return nil
+	}
+
+	// Preserve the permission
+	if stat, ok := sourceInfo.Sys().(*syscall.Stat_t); ok {
+		if err := os.Chown(destination, int(stat.Uid), int(stat.Gid)); err != nil {
+			return nil
+		}
+	}
+	return nil
+
 }
