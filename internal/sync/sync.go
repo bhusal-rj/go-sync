@@ -1,9 +1,13 @@
 package sync
 
 import (
+	"crypto/md5"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
+	"strconv"
+	"syscall"
 )
 
 type SyncOptions struct {
@@ -25,6 +29,7 @@ func BasicSync(opts SyncOptions) error {
 	if sourceInfo.IsDir {
 		return syncDirectory(opts.Source, opts.Destination, opts)
 	} else {
+
 		return syncFile(opts.Source, opts.Destination, opts)
 	}
 }
@@ -56,6 +61,7 @@ func syncDirectory(source, destination string, opts SyncOptions) error {
 				}
 			}
 		} else {
+
 			if err := syncFile(srcPath, dstPath, opts); err != nil {
 				return nil
 			}
@@ -72,9 +78,57 @@ func syncDirectory(source, destination string, opts SyncOptions) error {
 	return nil
 }
 
+func CalculateFileChecksum(fileInfo FileInfo) string {
+	// Placeholder for checksum calculation logic
+	fileCheckSumPath := fileInfo.ModTime.String() +
+		strconv.FormatInt(fileInfo.Size, 10)
+
+	byteString := fmt.Sprintf("%x", md5.Sum([]byte(fileCheckSumPath)))
+
+	return byteString
+}
+
+func CalculateFileDelta(path string) (string, error) {
+	// Check if the destination exist
+	destination_page, err := os.Stat(path)
+
+	if err != nil {
+		return "", nil
+	}
+	// If the destination exists check the delta of the file
+
+	fileInfo := &FileInfo{
+		Path:    path,
+		Size:    destination_page.Size(),
+		IsDir:   destination_page.IsDir(),
+		ModTime: destination_page.ModTime(),
+		Mode:    destination_page.Mode(),
+		Uid:     int(destination_page.Sys().(*syscall.Stat_t).Uid),
+		Gid:     int(destination_page.Sys().(*syscall.Stat_t).Gid),
+	}
+
+	// Calculate the checksum of the file
+	checksum := CalculateFileChecksum(*fileInfo)
+	return checksum, nil
+}
+
 func syncFile(source, destination string, opts SyncOptions) error {
+
 	if opts.Verbose {
 		fmt.Printf("Syncing file: %s -> %s\n", source, destination)
+	}
+
+	// Get the source calculatefilechecksum
+	sourceChecksum, _ := CalculateFileDelta(source)
+	destinationChecksum, err := CalculateFileDelta(path.Join(destination, source))
+
+	// Check the checksum of the source and destination
+
+	if err == nil && sourceChecksum == destinationChecksum {
+		if opts.Verbose {
+			fmt.Printf("File is up to date, skipping: %s\n", source)
+		}
+		return nil
 	}
 
 	return CopyFile(source, destination)

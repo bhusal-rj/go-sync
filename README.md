@@ -17,13 +17,13 @@ Go Sync is designed to efficiently synchronize files and directories between loc
   - [x] Research metadata handling in Go
   - [x] Implement timestamp preservation
   - [x] Implement permission preservation
-  - [ ] Test metadata sync on all platforms
+  - [x] Test metadata sync on all platforms
 
 - **M3:** Checksum-based delta sync
-  - [ ] Select checksum algorithm
-  - [ ] Implement checksum calculation
-  - [ ] Integrate delta sync logic
-  - [ ] Test delta sync performance
+  - [x] Select checksum algorithm
+  - [x] Implement checksum calculation
+  - [x] Integrate delta sync logic
+  - [x] Test delta sync performance
 
 - **M4:** Compression (optional gzip/zstd)
   - [ ] Research compression libraries

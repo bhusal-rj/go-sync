@@ -57,9 +57,14 @@ func CopyFile(source string, destination string) error {
 		return err
 	}
 	defer sourceFile.Close()
-
 	destinationPath := path.Join(destination, source)
 
+	// Create the parent directory
+	parentDir := filepath.Dir(destinationPath)
+
+	if err := os.MkdirAll(parentDir, 0755); err != nil {
+		return err
+	}
 	//Create the destination file from the disk
 	destFile, err := os.Create(destinationPath)
 
@@ -128,12 +133,12 @@ func PreserveFileMetadata(source, destination string) error {
 		return nil
 	}
 
-	// Preserve the ownership of the file
-	if stat, ok := sourceInfo.Sys().(*syscall.Stat_t); ok {
-		if err := os.Chown(destination, int(stat.Uid), int(stat.Gid)); err != nil {
-			return nil
-		}
-	}
+	// // Preserve the ownership of the file and guid and uid
+	// if stat, ok := sourceInfo.Sys().(*syscall.Stat_t); ok {
+	// 	if err := os.Chown(destination, int(stat.Uid), int(stat.Gid)); err != nil {
+	// 		return nil
+	// 	}
+	// }
 	return nil
 
 }
