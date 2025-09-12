@@ -14,6 +14,7 @@ var (
 	recursive   bool
 	verbose     bool
 	hidden      bool
+	ssh_key     string
 )
 
 // Th go-sync is the main entry point of the application
@@ -92,6 +93,7 @@ func addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&destination, "destination", "d", "", "Destination path (local or remote)")
 	cmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Recursively sync directories")
 	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
+	cmd.Flags().StringVarP(&ssh_key, "ssh-key", "k", "", "Path to SSH private key for remote connections")
 
 	if cmd == syncCmd {
 
