@@ -3,11 +3,15 @@ package sync
 import (
 	"crypto/md5"
 	"fmt"
+
 	"os"
 	"path"
 	"path/filepath"
 	"strconv"
 	"syscall"
+
+	"github.com/pkg/sftp"
+	"golang.org/x/crypto/ssh"
 )
 
 type SyncOptions struct {
@@ -16,14 +20,73 @@ type SyncOptions struct {
 	Recursive   bool   //Whether to sync directory recursively
 	Verbose     bool   //Enable verbose output
 	Hidden      bool   // Inclue hidden files and directories
+	Username    string // Username for remote connection
+	Host        string // Host for remote connection
+	SSHKey      string // Path to SSH private key for remote connections
+}
+
+var SftpClient *sftp.Client
+var IsServerSync bool
+
+// Server Sync
+func GetSFTPClient(opts SyncOptions) error {
+	// Connect to the server via ssh
+
+	key, err := os.ReadFile(opts.SSHKey)
+	if err != nil {
+		return fmt.Errorf("failed to read SSH key: %w", err)
+	}
+
+	signer, err := ssh.ParsePrivateKey(key)
+	if err != nil {
+		return fmt.Errorf("failed to parse SSH key: %w", err)
+	}
+
+	config := &ssh.ClientConfig{
+		User: opts.Username,
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	// Establish the connection
+	sshConn, err := ssh.Dial("tcp", opts.Host+":22", config)
+	if err != nil {
+		return fmt.Errorf("failed to connect to %s: %w", opts.Host, err)
+	}
+	fmt.Println("SSH connection established")
+	defer sshConn.Close()
+
+	sftpClient, err := sftp.NewClient(sshConn)
+	if err != nil {
+		return fmt.Errorf("failed to create SFTP client: %w", err)
+	}
+	defer sftpClient.Close()
+
+	SftpClient = sftpClient
+
+	fmt.Println("SFTP client created")
+	return nil
 }
 
 // BasicSync performs basic file/directory sync
 func BasicSync(opts SyncOptions) error {
+
 	sourceInfo, err := GetFileInfo(opts.Source)
 
 	if err != nil {
 		return fmt.Errorf("source path error: %w", err)
+	}
+
+	IsServerSync = opts.Host != "" && opts.Username != "" && opts.SSHKey != ""
+	if IsServerSync {
+		err := GetSFTPClient(opts)
+		if err != nil {
+			return fmt.Errorf("failed to get SFTP client: %w", err)
+		}
+
+		// return nil
 	}
 
 	if sourceInfo.IsDir {
@@ -39,9 +102,16 @@ func syncDirectory(source, destination string, opts SyncOptions) error {
 		fmt.Printf("Syncing directory: %s -> %s", source, destination)
 	}
 
-	// Create the destination directory
-	if err := CreateDirectory(destination); err != nil {
-		return err
+	if IsServerSync {
+		if err := CreateServerDirectory(SftpClient, destination); err != nil {
+			return err
+		}
+	} else {
+		// Create the destination directory
+		if err := CreateDirectory(destination); err != nil {
+			return err
+		}
+
 	}
 
 	entries, err := os.ReadDir(source)
@@ -88,13 +158,13 @@ func CalculateFileChecksum(fileInfo FileInfo) string {
 	return byteString
 }
 
-func CalculateFileDelta(path string) (string, error) {
+func CalculateFileDelta(destination_page os.FileInfo, path string) (string, error) {
 	// Check if the destination exist
-	destination_page, err := os.Stat(path)
+	// destination_page, err := os.Stat(path)
 
-	if err != nil {
-		return "", nil
-	}
+	// if err != nil {
+	// 	return "", nil
+	// }
 	// If the destination exists check the delta of the file
 
 	fileInfo := &FileInfo{
@@ -112,16 +182,39 @@ func CalculateFileDelta(path string) (string, error) {
 	return checksum, nil
 }
 
+func getServerFileStat(path string) (os.FileInfo, error) {
+	fileStat, err := SftpClient.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	return fileStat, nil
+}
 func syncFile(source, destination string, opts SyncOptions) error {
 
 	if opts.Verbose {
 		fmt.Printf("Syncing file: %s -> %s\n", source, destination)
 	}
 
+	var sourceChecksum, destinationChecksum string
+	var destinationPage os.FileInfo
 	// Get the source calculatefilechecksum
-	sourceChecksum, _ := CalculateFileDelta(source)
-	destinationChecksum, err := CalculateFileDelta(path.Join(destination, source))
 
+	sourcePage, err := os.Stat(source)
+
+	if err == nil {
+		sourceChecksum, _ = CalculateFileDelta(sourcePage, source)
+	}
+
+	if IsServerSync {
+		destinationPage, err = getServerFileStat(path.Join(destination, path.Base(source)))
+
+	} else {
+		destinationPage, err = os.Stat(destination)
+	}
+
+	if err == nil {
+		destinationChecksum, _ = CalculateFileDelta(destinationPage, path.Join(destination, source))
+	}
 	// Check the checksum of the source and destination
 
 	if err == nil && sourceChecksum == destinationChecksum {

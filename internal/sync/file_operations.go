@@ -1,12 +1,15 @@
 package sync
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
 	"syscall"
 	"time"
+
+	"github.com/pkg/sftp"
 )
 
 type FileInfo struct {
@@ -48,6 +51,24 @@ func CreateDirectory(path string) error {
 	return err
 }
 
+func CreateServerDirectory(sftpClient *sftp.Client, path string) error {
+	_, err := sftpClient.ReadDir(path)
+	if err != nil {
+		//Check the error is the os Doesnot exist error
+		if os.IsNotExist(err) {
+			// Create the directory
+			err = sftpClient.MkdirAll(path)
+			if err != nil {
+				return fmt.Errorf("failed to create remote directory: %w", err)
+			}
+			fmt.Println("Remote directory created:", path)
+			return nil
+		} else {
+			return fmt.Errorf("failed to read remote directory: %w", err)
+		}
+	}
+	return nil
+}
 func CopyFile(source string, destination string) error {
 
 	//Open the source file from the disk
