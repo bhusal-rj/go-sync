@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/bhusal-rj/go-sync/internal/sync"
 	"github.com/spf13/cobra"
@@ -14,6 +15,7 @@ var (
 	recursive   bool
 	verbose     bool
 	hidden      bool
+	ssh_key     string
 )
 
 // Th go-sync is the main entry point of the application
@@ -55,6 +57,16 @@ func init() {
 }
 
 func runSync(cmd *cobra.Command, args []string) {
+	arguments := os.Args
+	hostWithAddress := arguments[len(arguments)-1]
+	var hostName, hostAddress string
+
+	if strings.Contains(hostWithAddress, "@") {
+		hostArray := strings.Split(hostWithAddress, "@")
+		hostName = hostArray[0]
+		hostAddress = hostArray[1]
+		fmt.Println(hostName, hostAddress)
+	}
 	if _, err := os.Stat(source); os.IsNotExist(err) {
 		fmt.Printf("Source path does not exist: %s\n", source)
 		os.Exit(1)
@@ -73,6 +85,9 @@ func runSync(cmd *cobra.Command, args []string) {
 		Recursive:   recursive,
 		Verbose:     verbose,
 		Hidden:      hidden,
+		Username:    hostName,
+		Host:        hostAddress,
+		SSHKey:      ssh_key,
 	}
 
 	if err := sync.BasicSync(opts); err != nil {
@@ -92,6 +107,7 @@ func addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&destination, "destination", "d", "", "Destination path (local or remote)")
 	cmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Recursively sync directories")
 	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
+	cmd.Flags().StringVarP(&ssh_key, "ssh-key", "k", "", "Path to SSH private key for remote connections")
 
 	if cmd == syncCmd {
 
