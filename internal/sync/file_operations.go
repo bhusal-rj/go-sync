@@ -69,6 +69,49 @@ func CreateServerDirectory(sftpClient *sftp.Client, path string) error {
 	}
 	return nil
 }
+
+func CopyServerFile(parentDir string, sourceFile *os.File) error {
+	err := SftpClient.MkdirAll(parentDir)
+	if err != nil {
+		return err
+	}
+
+	destFile, err := SftpClient.Create(parentDir)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, sourceFile)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CopyLocalFile(path string, sourceFile *os.File) error {
+	// Create the parent directory
+	parentDir := filepath.Dir(path)
+
+	if err := os.MkdirAll(parentDir, 0755); err != nil {
+		return err
+	}
+	//Create the destination file from the disk
+	destFile, err := os.Create(path)
+
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	//Copy the info from the source to the destination
+	_, err = io.Copy(destFile, sourceFile)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func CopyFile(source string, destination string) error {
 
 	//Open the source file from the disk
@@ -80,24 +123,10 @@ func CopyFile(source string, destination string) error {
 	defer sourceFile.Close()
 	destinationPath := path.Join(destination, source)
 
-	// Create the parent directory
-	parentDir := filepath.Dir(destinationPath)
-
-	if err := os.MkdirAll(parentDir, 0755); err != nil {
-		return err
-	}
-	//Create the destination file from the disk
-	destFile, err := os.Create(destinationPath)
-
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-
-	//Copy the info from the source to the destination
-	_, err = io.Copy(destFile, sourceFile)
-	if err != nil {
-		return err
+	if IsServerSync {
+		err = CopyServerFile(destinationPath, sourceFile)
+	} else {
+		err = CopyLocalFile(destinationPath, sourceFile)
 	}
 
 	//Ensure that all the data is written to the file
@@ -149,6 +178,21 @@ func PreserveFileMetadata(source, destination string) error {
 		return err
 	}
 
+	// Preser the Server File Metadata
+	if IsServerSync {
+		// Preserve the permission
+		if err := SftpClient.Chmod(destination, sourceInfo.Mode()); err != nil {
+			return nil
+		}
+
+		// Preserve the ownership of the file and guid and uid
+		if stat, ok := sourceInfo.Sys().(*syscall.Stat_t); ok {
+			if err := SftpClient.Chown(destination, int(stat.Uid), int(stat.Gid)); err != nil {
+				return nil
+			}
+		}
+		return nil
+	}
 	// Preserve modification time
 	if err := os.Chtimes(destination, time.Now(), sourceInfo.ModTime()); err != nil {
 		return nil

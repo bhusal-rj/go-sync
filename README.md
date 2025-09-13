@@ -26,9 +26,9 @@ Go Sync is designed to efficiently synchronize files and directories between loc
   - [x] Test delta sync performance
 
 - **M4:** Remote sync over SSH or TCP
-  - [ ] Integrate SSH/TCP libraries
-  - [ ] Implement remote authentication
-  - [ ] Implement remote file transfer
+  - [x] Integrate SSH/TCP libraries
+  - [x] Implement remote authentication
+  - [x] Implement remote file transfer
   - [ ] Test remote sync reliability
 
 - **M5:** Progress bar, verbose logs
