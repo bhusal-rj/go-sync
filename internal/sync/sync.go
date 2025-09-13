@@ -27,6 +27,7 @@ type SyncOptions struct {
 
 var SftpClient *sftp.Client
 var IsServerSync bool
+var SSHConn *ssh.Client
 
 // Server Sync
 func GetSFTPClient(opts SyncOptions) error {
@@ -56,13 +57,14 @@ func GetSFTPClient(opts SyncOptions) error {
 		return fmt.Errorf("failed to connect to %s: %w", opts.Host, err)
 	}
 	fmt.Println("SSH connection established")
-	defer sshConn.Close()
+	// defer sshConn.Close()
 
 	sftpClient, err := sftp.NewClient(sshConn)
 	if err != nil {
 		return fmt.Errorf("failed to create SFTP client: %w", err)
 	}
-	defer sftpClient.Close()
+	SSHConn = sshConn
+	// defer sftpClient.Close()
 
 	SftpClient = sftpClient
 
@@ -90,11 +92,14 @@ func BasicSync(opts SyncOptions) error {
 	}
 
 	if sourceInfo.IsDir {
-		return syncDirectory(opts.Source, opts.Destination, opts)
+		syncDirectory(opts.Source, opts.Destination, opts)
 	} else {
 
-		return syncFile(opts.Source, opts.Destination, opts)
+		syncFile(opts.Source, opts.Destination, opts)
 	}
+
+	fmt.Println("Sync completed successfully")
+	return nil
 }
 
 func syncDirectory(source, destination string, opts SyncOptions) error {
@@ -173,10 +178,21 @@ func CalculateFileDelta(destination_page os.FileInfo, path string) (string, erro
 		IsDir:   destination_page.IsDir(),
 		ModTime: destination_page.ModTime(),
 		Mode:    destination_page.Mode(),
-		Uid:     int(destination_page.Sys().(*syscall.Stat_t).Uid),
-		Gid:     int(destination_page.Sys().(*syscall.Stat_t).Gid),
 	}
 
+	sys := destination_page.Sys()
+
+	switch stat := sys.(type) {
+	case *syscall.Stat_t:
+		fileInfo.Uid = int(stat.Uid)
+		fileInfo.Gid = int(stat.Gid)
+	case *sftp.FileStat:
+		fileInfo.Uid = int(stat.UID)
+		fileInfo.Gid = int(stat.GID)
+	default:
+		fileInfo.Uid = 0
+		fileInfo.Gid = 0
+	}
 	// Calculate the checksum of the file
 	checksum := CalculateFileChecksum(*fileInfo)
 	return checksum, nil

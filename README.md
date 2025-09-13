@@ -29,7 +29,7 @@ Go Sync is designed to efficiently synchronize files and directories between loc
   - [x] Integrate SSH/TCP libraries
   - [x] Implement remote authentication
   - [x] Implement remote file transfer
-  - [ ] Test remote sync reliability
+  - [x] Test remote sync reliability
 
 - **M5:** Progress bar, verbose logs
   - [ ] Design progress bar UI

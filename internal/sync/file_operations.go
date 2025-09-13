@@ -70,20 +70,21 @@ func CreateServerDirectory(sftpClient *sftp.Client, path string) error {
 	return nil
 }
 
-func CopyServerFile(parentDir string, sourceFile *os.File) error {
+func CopyServerFile(destinationPath string, sourceFile *os.File) error {
+	parentDir := path.Dir(destinationPath)
 	err := SftpClient.MkdirAll(parentDir)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
-
-	destFile, err := SftpClient.Create(parentDir)
+	fmt.Println(destinationPath)
+	destFile, err := SftpClient.Create(destinationPath)
 	if err != nil {
 		return err
 	}
 	defer destFile.Close()
 
 	_, err = io.Copy(destFile, sourceFile)
-
 	if err != nil {
 		return err
 	}
