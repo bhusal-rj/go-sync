@@ -173,40 +173,29 @@ func TraverseDirectory(rooPath string, hidden bool) ([]FileInfo, error) {
 
 // PreserveFileMetadata and permissions of the copied file
 func PreserveFileMetadata(source, destination string) error {
-
 	sourceInfo, err := os.Stat(source)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get source file info: %w", err)
 	}
 
-	// Preser the Server File Metadata
 	if IsServerSync {
-		// Preserve the permission
 		if err := SftpClient.Chmod(destination, sourceInfo.Mode()); err != nil {
-			return nil
+			return fmt.Errorf("failed to preserve remote file permissions: %w", err)
 		}
 
-		// Preserve the ownership of the file and guid and uid
 		if stat, ok := sourceInfo.Sys().(*syscall.Stat_t); ok {
 			if err := SftpClient.Chown(destination, int(stat.Uid), int(stat.Gid)); err != nil {
-				return nil
+				return fmt.Errorf("failed to preserve remote file ownership: %w", err)
 			}
 		}
 		return nil
 	}
-	// Preserve modification time
+
 	if err := os.Chtimes(destination, time.Now(), sourceInfo.ModTime()); err != nil {
-		return nil
+		return fmt.Errorf("failed to preserve modification time: %w", err)
 	}
 
-	// // Preserve the ownership of the file and guid and uid
-	// if stat, ok := sourceInfo.Sys().(*syscall.Stat_t); ok {
-	// 	if err := os.Chown(destination, int(stat.Uid), int(stat.Gid)); err != nil {
-	// 		return nil
-	// 	}
-	// }
 	return nil
-
 }
 
 func PreserveDirectoryMetadata(source, destination string) error {

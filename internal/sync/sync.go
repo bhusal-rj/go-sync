@@ -1,13 +1,13 @@
 package sync
 
 import (
-	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
+	"io"
 
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"syscall"
 
 	"github.com/pkg/sftp"
@@ -99,6 +99,14 @@ func BasicSync(opts SyncOptions) error {
 	}
 
 	fmt.Println("Sync completed successfully")
+	defer func() {
+		if SftpClient != nil {
+			SftpClient.Close()
+		}
+		if SSHConn != nil {
+			SSHConn.Close()
+		}
+	}()
 	return nil
 }
 
@@ -153,14 +161,19 @@ func syncDirectory(source, destination string, opts SyncOptions) error {
 	return nil
 }
 
-func CalculateFileChecksum(fileInfo FileInfo) string {
-	// Placeholder for checksum calculation logic
-	fileCheckSumPath := fileInfo.ModTime.String() +
-		strconv.FormatInt(fileInfo.Size, 10)
+func CalculateFileChecksum(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open file for checksum: %w", err)
+	}
+	defer file.Close()
 
-	byteString := fmt.Sprintf("%x", md5.Sum([]byte(fileCheckSumPath)))
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", fmt.Errorf("failed to calculate checksum: %w", err)
+	}
 
-	return byteString
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
 func CalculateFileDelta(destination_page os.FileInfo, path string) (string, error) {
@@ -194,7 +207,7 @@ func CalculateFileDelta(destination_page os.FileInfo, path string) (string, erro
 		fileInfo.Gid = 0
 	}
 	// Calculate the checksum of the file
-	checksum := CalculateFileChecksum(*fileInfo)
+	checksum, _ := CalculateFileChecksum(fileInfo.Path)
 	return checksum, nil
 }
 
